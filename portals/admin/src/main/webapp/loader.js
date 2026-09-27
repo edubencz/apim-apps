@@ -40,14 +40,20 @@ module.exports = function (source, map) {
 
     if (appContext && fs.existsSync(headerPath)) {
         newSource = fs.readFileSync(headerPath, 'utf8');
-        if (newSource.indexOf('AppOverride')) {
+        // `indexOf('AppOverride')` returns -1 (truthy) when the string is NOT found, so the original
+        // truthiness checks below took the rewrite path unconditionally. On Windows this rewrote
+        // `\"` into `/"` inside every bundled file (including node_modules such as redux and
+        // monaco-editor) whose content merely resembled an import statement, corrupting string
+        // literals and breaking the production webpack build. Fixed to only take the
+        // AppOverride-rewrite path when the token is actually present.
+        if (newSource.indexOf('AppOverride') !== -1) {
             const lines = newSource.split('\n');
             const formatedLines = [];
 
             // Check if there are import statements with 'AppOverride' prefix and re write the file path
             const regex = /import(?:["'\s]*([\w*{}\n\r\t, ]+)from\s*)?["'\s].*([@\w/_-]+)["'\s].*/;
             lines.forEach((line) => {
-                if (regex.test(line) && line.indexOf('AppOverride')) {
+                if (regex.test(line) && line.indexOf('AppOverride') !== -1) {
                     line = line.replace(/AppOverride/g, this.rootContext + pathSeperator + 'override');
                     line = isWin ? line.replace(/\\/g, '/') : line;
                 }

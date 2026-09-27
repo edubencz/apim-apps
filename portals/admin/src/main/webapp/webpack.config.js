@@ -114,7 +114,11 @@ module.exports = function (env, args) {
             rules: [
                 {
                     test: /\.(js|jsx)$/,
-                    exclude: [/node_modules\/(?!(@hapi)\/).*/, /coverage/],
+                    // Match both path separators: on Windows, path.sep is a backslash, so the
+                    // forward-slash-only regex excluded nothing, causing babel-loader to transpile
+                    // all of node_modules (extremely slow, and it fails on files such as
+                    // monaco-editor's mdx.js and redux's redux.js).
+                    exclude: [/node_modules[\\/](?!(@hapi)[\\/]).*/, /coverage/],
                     use: [
                         {
                             loader: 'babel-loader',
