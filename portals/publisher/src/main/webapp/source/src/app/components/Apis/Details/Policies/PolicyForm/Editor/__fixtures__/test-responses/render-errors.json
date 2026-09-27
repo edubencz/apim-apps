@@ -1,0 +1,12 @@
+{
+  "renderedSequence": null,
+  "normalized": false,
+  "errors": [
+    { "line": 5, "column": 3, "message": "mismatched tag", "severity": "error" }
+  ],
+  "warnings": [
+    "root <sequence> was unwrapped"
+  ],
+  "detectedVariables": ["token_url"],
+  "unknownMediators": []
+}

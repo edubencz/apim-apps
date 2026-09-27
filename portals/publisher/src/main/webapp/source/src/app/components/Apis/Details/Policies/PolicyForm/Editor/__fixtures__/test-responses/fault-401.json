@@ -1,0 +1,44 @@
+{
+  "renderedSequence": "<sequence xmlns=\"http://ws.apache.org/ns/synapse\">...</sequence>",
+  "normalized": true,
+  "errors": [],
+  "warnings": [],
+  "detectedVariables": [],
+  "unknownMediators": [],
+  "execution": {
+    "status": "FAULT",
+    "respondedEarly": false,
+    "durationMs": 48,
+    "properties": {
+      "synapse": {},
+      "axis2": { "HTTP_SC": "401" },
+      "transport": {}
+    },
+    "logs": [
+      { "ts": 1727300000100, "level": "INFO", "nodeId": "9", "message": "calling token endpoint" }
+    ],
+    "trace": [
+      { "order": 0, "nodeId": "9", "tag": "payloadFactory", "tMs": 1 },
+      { "order": 1, "nodeId": "10", "tag": "call", "tMs": 5 }
+    ],
+    "outboundCalls": [
+      {
+        "nodeId": "10",
+        "method": "POST",
+        "url": "https://idp.example.com/token",
+        "mocked": true,
+        "mockId": "m1",
+        "status": 401,
+        "requestBody": "username=admin",
+        "durationMs": 3
+      }
+    ],
+    "fault": {
+      "code": "101504",
+      "message": "Received HTTP 401 from the blocking call",
+      "nodeId": "10"
+    },
+    "warnings": [],
+    "errors": []
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "renderedSequence": "<sequence xmlns=\"http://ws.apache.org/ns/synapse\">...</sequence>",
+  "normalized": true,
+  "errors": [],
+  "warnings": [],
+  "detectedVariables": [],
+  "unknownMediators": [],
+  "execution": {
+    "status": "RESPONDED",
+    "respondedEarly": true,
+    "durationMs": 21,
+    "clientResponse": {
+      "status": 401,
+      "headers": { "Content-Type": "application/json" },
+      "body": "{\"error\":\"invalid token\"}"
+    },
+    "properties": { "synapse": {}, "axis2": {}, "transport": {} },
+    "logs": [
+      { "ts": 1727300000200, "level": "ERROR", "nodeId": "12/else/0", "message": "HTTP_SC = 401" }
+    ],
+    "trace": [
+      { "order": 0, "nodeId": "12", "tag": "filter", "tMs": 1 },
+      { "order": 1, "nodeId": "12/else/0", "tag": "log", "tMs": 2 },
+      { "order": 2, "nodeId": "12/else/1", "tag": "property", "tMs": 3 },
+      { "order": 3, "nodeId": "12/else/2", "tag": "payloadFactory", "tMs": 4 },
+      { "order": 4, "nodeId": "12/else/3", "tag": "respond", "tMs": 5 }
+    ],
+    "outboundCalls": [],
+    "warnings": [],
+    "errors": []
+  }
+}

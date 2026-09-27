@@ -1,0 +1,39 @@
+{
+  "renderedSequence": "<sequence xmlns=\"http://ws.apache.org/ns/synapse\"><property name=\"Authorization\" value=\"Bearer xyz\"/><respond/></sequence>",
+  "normalized": true,
+  "errors": [],
+  "warnings": [],
+  "detectedVariables": [],
+  "unknownMediators": [],
+  "execution": {
+    "status": "COMPLETED",
+    "respondedEarly": false,
+    "durationMs": 132,
+    "clientResponse": {
+      "status": 200,
+      "headers": { "Content-Type": "application/json", "Authorization": "Bearer xyz" },
+      "body": "{\"ok\":true}"
+    },
+    "finalMessage": {
+      "payload": "{\"ok\":true}",
+      "contentType": "application/json",
+      "httpStatus": 200,
+      "headers": { "Authorization": "Bearer xyz" }
+    },
+    "properties": {
+      "synapse": { "LEAN_ACCESS_TOKEN": "xyz" },
+      "axis2": { "HTTP_SC": "200", "HTTP_METHOD": "POST" },
+      "transport": { "Authorization": "Bearer xyz" }
+    },
+    "logs": [
+      { "ts": 1727300000000, "level": "INFO", "nodeId": "0", "message": "Authorization = Bearer xyz" }
+    ],
+    "trace": [
+      { "order": 0, "nodeId": "0", "tag": "property", "tMs": 1 },
+      { "order": 1, "nodeId": "1", "tag": "respond", "tMs": 2 }
+    ],
+    "outboundCalls": [],
+    "warnings": [],
+    "errors": []
+  }
+}
