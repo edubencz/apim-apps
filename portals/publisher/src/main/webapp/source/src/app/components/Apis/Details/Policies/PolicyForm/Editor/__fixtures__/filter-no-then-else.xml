@@ -1,0 +1,7 @@
+<sequence xmlns="http://ws.apache.org/ns/synapse" name="filter-no-then-else">
+    <property name="A" value="1"/>
+    <filter source="get-property('A')" regex="1">
+        <log level="custom"/>
+        <respond/>
+    </filter>
+</sequence>

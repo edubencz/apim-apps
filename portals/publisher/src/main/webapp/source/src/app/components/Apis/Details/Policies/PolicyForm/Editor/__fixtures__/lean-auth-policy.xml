@@ -1,0 +1,55 @@
+<sequence xmlns="http://ws.apache.org/ns/synapse" name="lean-auth-policy">
+    <!-- Capture the original request so it can be restored after the token exchange -->
+    <property name="ORIGINAL_JSON_PAYLOAD" expression="json-eval($)" scope="default" type="STRING"/>
+    <property name="ORIGINAL_HTTP_METHOD" expression="get-property('axis2','HTTP_METHOD')"/>
+    <property name="ORIGINAL_MESSAGE_TYPE" expression="get-property('axis2','messageType')"/>
+    <property name="ORIGINAL_CONTENT_TYPE" expression="get-property('axis2','ContentType')"/>
+    <property name="ORIGINAL_REST_URL_POSTFIX" expression="get-property('axis2','REST_URL_POSTFIX')"/>
+    <property name="REST_URL_POSTFIX" action="remove" scope="axis2"/>
+    <property name="HTTP_METHOD" value="POST" scope="axis2"/>
+    <property name="messageType" value="application/x-www-form-urlencoded" scope="axis2"/>
+    <property name="ContentType" value="application/x-www-form-urlencoded" scope="axis2"/>
+    <!-- Build the token request body -->
+    <payloadFactory media-type="text">
+        <format>username={{username}}&amp;password={{password}}&amp;grant_type=password</format>
+        <args/>
+    </payloadFactory>
+    <call blocking="true">
+        <endpoint>
+            <http method="post" uri-template="{{token_url}}"/>
+        </endpoint>
+    </call>
+    <log level="full">
+        <property name="LEAN_AUTH_RESPONSE" value="Token endpoint response"/>
+    </log>
+    <filter source="get-property('axis2','HTTP_SC')" regex="200">
+        <then>
+            <property name="LEAN_ACCESS_TOKEN" expression="json-eval($.access_token)" scope="default"/>
+            <payloadFactory media-type="json">
+                <format>$1</format>
+                <args>
+                    <arg expression="get-property('ORIGINAL_JSON_PAYLOAD')"/>
+                </args>
+            </payloadFactory>
+            <property name="Authorization" expression="fn:concat('Bearer ', get-property('LEAN_ACCESS_TOKEN'))" scope="transport"/>
+        </then>
+        <else>
+            <log level="custom">
+                <property name="LEAN_AUTH_ERROR" value="Token endpoint returned non-200"/>
+            </log>
+            <property name="HTTP_SC" value="401" scope="axis2"/>
+            <payloadFactory media-type="json">
+                <format>{
+                    "message": "Nao foi possivel obter o token de autenticacao no servico Lean."
+                }</format>
+                <args/>
+            </payloadFactory>
+            <respond/>
+        </else>
+    </filter>
+    <!-- Restore the original request before continuing to the backend -->
+    <property name="HTTP_METHOD" expression="get-property('ORIGINAL_HTTP_METHOD')" scope="axis2"/>
+    <property name="messageType" expression="get-property('ORIGINAL_MESSAGE_TYPE')" scope="axis2"/>
+    <property name="ContentType" expression="get-property('ORIGINAL_CONTENT_TYPE')" scope="axis2"/>
+    <property name="REST_URL_POSTFIX" expression="get-property('ORIGINAL_REST_URL_POSTFIX')" scope="axis2"/>
+</sequence>

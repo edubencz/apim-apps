@@ -1,0 +1,18 @@
+<sequence xmlns="http://ws.apache.org/ns/synapse" name="switch-example">
+    <property name="X" value="1"/>
+    <switch source="get-property('X')">
+        <case regex="1">
+            <log level="custom">
+                <property name="A" value="1"/>
+            </log>
+            <respond/>
+        </case>
+        <case regex="2">
+            <drop/>
+        </case>
+        <default>
+            <log level="custom"/>
+        </default>
+    </switch>
+    <property name="Y" value="2"/>
+</sequence>

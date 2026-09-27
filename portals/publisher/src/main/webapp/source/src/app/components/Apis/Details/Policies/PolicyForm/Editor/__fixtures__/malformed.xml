@@ -1,0 +1,5 @@
+<sequence xmlns="http://ws.apache.org/ns/synapse" name="broken">
+    <property name="A" value="1"/>
+    <log level="full">
+    <property name="B" value="2"/>
+</sequence>
