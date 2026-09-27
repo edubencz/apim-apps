@@ -22,13 +22,28 @@ import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import Icon from '@mui/material/Icon';
 import { FormattedMessage, useIntl } from 'react-intl';
-import { Link, useHistory } from 'react-router-dom';
+import { Link, useHistory, useLocation } from 'react-router-dom';
 import Alert from 'AppComponents/Shared/Alert';
 import API from 'AppData/api.js';
 import type { CreatePolicySpec } from 'AppComponents/Apis/Details/Policies/Types';
 import PolicyCreateForm from 'AppComponents/Apis/Details/Policies/PolicyForm/PolicyCreateForm';
+import uuidv4 from 'AppComponents/Apis/Details/Policies/Utils';
 import { Box } from '@mui/material';
 import CONSTS from 'AppData/Constants';
+
+interface DuplicateIntoEditorState {
+    base?: {
+        spec?: {
+            displayName?: string;
+            version?: string;
+            description?: string;
+            applicableFlows?: string[];
+            supportedApiTypes?: string[];
+            policyAttributes?: any[];
+        };
+        definition?: string;
+    };
+}
 
 const PREFIX = 'CreatePolicy';
 
@@ -58,10 +73,16 @@ const StyledGrid = styled(Grid)(({ theme }: { theme: Theme }) => ({
 const CreatePolicy: React.FC = () => {
 
     const history = useHistory();
+    const location = useLocation<DuplicateIntoEditorState | undefined>();
+    const duplicateState = location.state?.base;
     const api = new API();
     const [synapsePolicyDefinitionFile, setSynapsePolicyDefinitionFile] = useState<any[]>([]);
     const [ccPolicyDefinitionFile, setCcPolicyDefinitionFile] = useState<any[]>([]);
     const [saving, setSaving] = useState(false);
+    // "Duplicate into editor" (see CommonPolicies/ViewPolicy.tsx) arrives with pre-fetched spec +
+    // definition text via router state and opens straight into the editor tab.
+    const [sourceMode, setSourceMode] = useState<'upload' | 'editor'>('editor');
+    const [synapseEditorContent, setSynapseEditorContent] = useState<string>(duplicateState?.definition || '');
     const intl = useIntl();
     const addCommonPolicy = (
         policySpecContent: CreatePolicySpec,
@@ -95,7 +116,11 @@ const CreatePolicy: React.FC = () => {
     };
 
     const onSave = (policySpecification: CreatePolicySpec) => {
-        const synapseFile = synapsePolicyDefinitionFile.length !== 0 ? synapsePolicyDefinitionFile : null;
+        let synapseFile = synapsePolicyDefinitionFile.length !== 0 ? synapsePolicyDefinitionFile : null;
+        if (sourceMode === 'editor') {
+            const fileName = `${policySpecification.name}_${policySpecification.version}.j2`;
+            synapseFile = [new File([synapseEditorContent], fileName, { type: 'text/plain' })];
+        }
         const ccFile = ccPolicyDefinitionFile.length !== 0 ? ccPolicyDefinitionFile : null;
         addCommonPolicy(
             policySpecification,
@@ -144,6 +169,21 @@ const CreatePolicy: React.FC = () => {
                             setCcPolicyDefinitionFile={setCcPolicyDefinitionFile}
                             onCancel={onCancel}
                             saving={saving}
+                            sourceMode={sourceMode}
+                            setSourceMode={setSourceMode}
+                            synapseEditorContent={synapseEditorContent}
+                            setSynapseEditorContent={setSynapseEditorContent}
+                            prefill={duplicateState ? {
+                                displayName: duplicateState.spec?.displayName
+                                    ? `${duplicateState.spec.displayName} Copy` : undefined,
+                                version: duplicateState.spec?.version,
+                                description: duplicateState.spec?.description,
+                                applicableFlows: duplicateState.spec?.applicableFlows,
+                                supportedApiTypes: duplicateState.spec?.supportedApiTypes,
+                                policyAttributes: (duplicateState.spec?.policyAttributes || []).map(
+                                    (attribute: any) => ({ ...attribute, id: uuidv4() }),
+                                ),
+                            } : undefined}
                         />
                     </Grid>
                 </Grid>

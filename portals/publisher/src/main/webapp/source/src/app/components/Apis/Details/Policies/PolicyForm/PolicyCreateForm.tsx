@@ -60,6 +60,7 @@ export const ACTIONS = {
     UPDATE_SUPPORTED_API_TYPES: 'updateSupportedApiTypes',
     UPDATE_SUPPORTED_GATEWAYS: 'updateSupportedGateways',
     ADD_POLICY_ATTRIBUTE: 'addPolicyAttribute',
+    ADD_POLICY_ATTRIBUTE_WITH_NAME: 'addPolicyAttributeWithName',
     UPDATE_POLICY_ATTRIBUTE: 'updatePolicyAttribute',
     DELETE_POLICY_ATTRIBUTE: 'deletePolicyAttribute',
     SET_APPLICABLE_FLOWS: 'setApplicableFlows',
@@ -131,6 +132,31 @@ function policyReducer(state: NewPolicyState, action: any) {
                 ],
             };
         }
+        case ACTIONS.ADD_POLICY_ATTRIBUTE_WITH_NAME: {
+            // Used by the "Add {{var}} as attribute" chip in the policy editor workspace: creates
+            // an attribute prefilled with the jinja variable's name instead of a blank one.
+            if (state.policyAttributes.some((attr: PolicyAttribute) => attr.name === action.name)) {
+                return state;
+            }
+            return {
+                ...state,
+                policyAttributes: [
+                    ...state.policyAttributes,
+                    {
+                        id: uuidv4(),
+                        name: action.name,
+                        displayName: action.name,
+                        version: null,
+                        description: '',
+                        required: true,
+                        type: 'String',
+                        validationRegex: null,
+                        defaultValue: null,
+                        allowedValues: [],
+                    },
+                ],
+            };
+        }
         case ACTIONS.UPDATE_POLICY_ATTRIBUTE: {
             return {
                 ...state,
@@ -188,6 +214,20 @@ interface PolicyCreateFormProps {
     onCancel: () => void;
     saving: boolean;
     apiType?: string;
+    /** 'upload' (dropzone) | 'editor' (Monaco + live diagram) - see PolicyForm/Editor */
+    sourceMode?: 'upload' | 'editor';
+    setSourceMode?: React.Dispatch<React.SetStateAction<'upload' | 'editor'>>;
+    synapseEditorContent?: string;
+    setSynapseEditorContent?: React.Dispatch<React.SetStateAction<string>>;
+    /** Prefills the form when arriving from "Duplicate into editor" (see ViewPolicy.tsx) */
+    prefill?: {
+        displayName?: string;
+        version?: string;
+        description?: string;
+        applicableFlows?: string[];
+        supportedApiTypes?: string[];
+        policyAttributes?: PolicyAttribute[];
+    };
 }
 
 /**
@@ -204,16 +244,22 @@ const PolicyCreateForm: FC<PolicyCreateFormProps> = ({
     onCancel,
     saving,
     apiType,
+    sourceMode,
+    setSourceMode,
+    synapseEditorContent,
+    setSynapseEditorContent,
+    prefill,
 }) => {
 
     const initialState: NewPolicyState = {
-        displayName: null,
-        version: null,
-        description: '',
-        applicableFlows: apiType === 'WS' ? ['request'] : ['request', 'response', 'fault'],
-        supportedApiTypes: apiType ? [apiType] : ['HTTP'],
+        displayName: prefill?.displayName ?? null,
+        version: prefill?.version ?? null,
+        description: prefill?.description ?? '',
+        applicableFlows: prefill?.applicableFlows
+            ?? (apiType === 'WS' ? ['request'] : ['request', 'response', 'fault']),
+        supportedApiTypes: prefill?.supportedApiTypes ?? (apiType ? [apiType] : ['HTTP']),
         supportedGateways: ['Synapse'],
-        policyAttributes: [],
+        policyAttributes: prefill?.policyAttributes ?? [],
     };
     const [state, dispatch] = useReducer(policyReducer, initialState);
     const [isFormDisabled, setIsFormDisabled] = useState(false);
@@ -236,12 +282,16 @@ const PolicyCreateForm: FC<PolicyCreateFormProps> = ({
         // Supported gateways current state validation
         if (state.supportedGateways.length === 0) hasError = true;
 
-        // Policy file upload current state validation for Synapse
-        if (
-            state.supportedGateways.includes(CONSTS.GATEWAY_TYPE.synapse) &&
-            synapsePolicyDefinitionFile.length === 0
-        )
-            hasError = true;
+        // Policy file upload current state validation for Synapse. In 'editor' source mode we
+        // only require non-empty content - the local j2/XML parse may still show errors (jinja
+        // templating can legitimately confuse a naive XML parser), so those don't block saving.
+        if (state.supportedGateways.includes(CONSTS.GATEWAY_TYPE.synapse)) {
+            if (sourceMode === 'editor') {
+                if (!synapseEditorContent || synapseEditorContent.trim() === '') hasError = true;
+            } else if (synapsePolicyDefinitionFile.length === 0) {
+                hasError = true;
+            }
+        }
 
         // Policy file upload current state validation for Choreo Connect
         if (
@@ -270,7 +320,9 @@ const PolicyCreateForm: FC<PolicyCreateFormProps> = ({
         state.supportedGateways,
         state.policyAttributes,
         synapsePolicyDefinitionFile,
-        ccPolicyDefinitionFile
+        ccPolicyDefinitionFile,
+        sourceMode,
+        synapseEditorContent,
     ]);
 
     /**
@@ -333,6 +385,14 @@ const PolicyCreateForm: FC<PolicyCreateFormProps> = ({
                 ccPolicyDefinitionFile={ccPolicyDefinitionFile}
                 setCcPolicyDefinitionFile={setCcPolicyDefinitionFile}
                 dispatch={dispatch}
+                sourceMode={sourceMode}
+                setSourceMode={setSourceMode}
+                synapseEditorContent={synapseEditorContent}
+                setSynapseEditorContent={setSynapseEditorContent}
+                policyAttributes={state.policyAttributes}
+                onSavePolicy={onPolicySave}
+                saveDisabled={isFormDisabled}
+                saving={saving}
             />
             <Divider />
             {/* Attributes of policy */}

@@ -40,6 +40,10 @@ interface TabPanelSharedProps {
     apiPolicyList?: Policy[];
     isReadOnly?: boolean;
     hideViewButton?: boolean;
+    /** Forwarded to DraggablePolicyCard when it is the Apis/Details/Policies one - see
+     * PolicyList.tsx (Issue 5: API-specific "Duplicate into editor"). Ignored by other
+     * DraggablePolicyCard implementations (e.g. GlobalPolicies). */
+    onDuplicateIntoEditor?: (prefill: any) => void;
 }
 
 const TabPanelShared: FC<TabPanelSharedProps> = ({
@@ -53,6 +57,7 @@ const TabPanelShared: FC<TabPanelSharedProps> = ({
     DraggablePolicyCard,
     isReadOnly = false,
     hideViewButton = false,
+    onDuplicateIntoEditor,
 }) => {
     const renderPolicyCards = (policies?: Policy[]) => {
         if (!policies || policies.length === 0) {
@@ -72,6 +77,7 @@ const TabPanelShared: FC<TabPanelSharedProps> = ({
                 fetchPolicies={fetchPolicies}
                 isReadOnly={isReadOnly}
                 hideViewButton={hideViewButton}
+                onDuplicateIntoEditor={onDuplicateIntoEditor}
             />
         ));
     };

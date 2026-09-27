@@ -3499,6 +3499,130 @@ class API extends Resource {
     }
 
     /**
+     * Get the raw (Synapse) definition text of a common operation policy, used by the
+     * "Duplicate into editor" action in ViewPolicy. Unlike getCommonOperationPolicyContent
+     * (which returns a zip archive), this returns the plain-text .j2 body directly.
+     * Backend operation ID (Fase 3, tag 'Operation Policies'):
+     *   GET /operation-policies/{operationPolicyId}/definition?gatewayType=Synapse
+     * @param {String} policyId UUID of the common operation policy
+     * @returns {Promise} Promise containing the plain-text policy definition
+     */
+    static getCommonOperationPolicyDefinition(policyId) {
+        const restApiClient = new APIClientFactory().getAPIClient(Utils.getCurrentEnvironment(), Utils.CONST.API_CLIENT).client;
+        return restApiClient.then(client => {
+            const operation = client.apis['Operation Policies'] &&
+                client.apis['Operation Policies'].getCommonOperationPolicyDefinition;
+            if (!operation) {
+                return Promise.reject(new Error('OPERATION_NOT_AVAILABLE'));
+            }
+            return operation(
+                { operationPolicyId: policyId, gatewayType: 'Synapse' },
+                this._requestMetaData(),
+            );
+        });
+    }
+
+    /**
+     * Get the raw (Synapse) definition text of an API specific operation policy, used by the
+     * "Duplicate into editor" action in the API-specific ViewPolicy.
+     * Backend operation ID (Fase 3, tag 'API Operation Policies'):
+     *   GET /apis/{apiId}/operation-policies/{operationPolicyId}/definition?gatewayType=Synapse
+     * @param {String} policyId UUID of the operation policy
+     * @param {String} apiId UUID of the API
+     * @returns {Promise} Promise containing the plain-text policy definition
+     */
+    static getAPISpecificOperationPolicyDefinition(policyId, apiId) {
+        const restApiClient = new APIClientFactory().getAPIClient(Utils.getCurrentEnvironment(), Utils.CONST.API_CLIENT).client;
+        return restApiClient.then(client => {
+            const operation = client.apis['API Operation Policies'] &&
+                client.apis['API Operation Policies'].getAPISpecificOperationPolicyDefinition;
+            if (!operation) {
+                return Promise.reject(new Error('OPERATION_NOT_AVAILABLE'));
+            }
+            return operation(
+                { operationPolicyId: policyId, apiId: apiId, gatewayType: 'Synapse' },
+                this._requestMetaData(),
+            );
+        });
+    }
+
+    /**
+     * Renders a .j2 operation policy body (Jinjava render + XML normalize/validate) without
+     * requiring a gateway - used by the live editor/diagram to surface server-side errors that
+     * a purely local parse cannot catch (e.g. unknown mediators, jinjava template errors).
+     * Backend operation ID (Fase 3, tag 'Operation Policies'):
+     *   POST /operation-policies/render  body: {policyDefinition, attributeValues}
+     * Silently rejects with an Error whose message is 'OPERATION_NOT_AVAILABLE' when the backend
+     * does not yet expose this operation (Fase 3 not deployed), so callers can fall back to
+     * local-only validation.
+     * @param {String} policyDefinition Raw .j2 policy body
+     * @param {Object} attributeValues Map of attribute name -> sample value used while rendering
+     * @returns {Promise} Promise containing {renderedSequence, normalized, errors, warnings,
+     * detectedVariables, unknownMediators}
+     */
+    renderOperationPolicy(policyDefinition, attributeValues = {}) {
+        return this.client.then(client => {
+            const operation = client.apis['Operation Policies'] &&
+                client.apis['Operation Policies'].renderOperationPolicy;
+            if (!operation) {
+                return Promise.reject(new Error('OPERATION_NOT_AVAILABLE'));
+            }
+            return operation(
+                {},
+                {
+                    requestBody: {
+                        policyDefinition,
+                        attributeValues,
+                    },
+                },
+                this._requestMetaData(),
+            );
+        });
+    }
+
+    /**
+     * Executes a .j2 operation policy against a real Synapse sandbox on a Gateway environment
+     * (Fase 5 Test panel). Kept here (Fase 4 scaffolding only) so the data layer is ready ahead
+     * of the TestPanel UI.
+     * Backend operation ID (Fase 3, tag 'Operation Policies'): POST /operation-policies/test
+     * @param {Object} body {policyDefinition, attributeValues, flow, sampleRequest, mocks,
+     * extraProperties, gatewayEnvironment} - see publisher-api.yaml (Fase 3) for the full shape
+     * @returns {Promise} Promise containing the render fields plus an `execution` result
+     */
+    testOperationPolicy(body) {
+        return this.client.then(client => {
+            const operation = client.apis['Operation Policies'] &&
+                client.apis['Operation Policies'].testOperationPolicy;
+            if (!operation) {
+                return Promise.reject(new Error('OPERATION_NOT_AVAILABLE'));
+            }
+            return operation(
+                {},
+                { requestBody: body },
+                this._requestMetaData(),
+            );
+        });
+    }
+
+    /**
+     * Lists the Gateway environments available for the policy sandbox test-run (Fase 5).
+     * Backend operation ID (Fase 3, tag 'Operation Policies'):
+     *   GET /operation-policies/test/environments
+     * @returns {Promise} Promise containing the list of sandbox-capable gateway environments
+     */
+    static getPolicySandboxEnvironments() {
+        const restApiClient = new APIClientFactory().getAPIClient(Utils.getCurrentEnvironment(), Utils.CONST.API_CLIENT).client;
+        return restApiClient.then(client => {
+            const operation = client.apis['Operation Policies'] &&
+                client.apis['Operation Policies'].getOperationPolicySandboxEnvironments;
+            if (!operation) {
+                return Promise.reject(new Error('OPERATION_NOT_AVAILABLE'));
+            }
+            return operation({}, this._requestMetaData());
+        });
+    }
+
+    /**
      * Get API Operation Policies
      * @param {String} apiId UUID of the API
      * @returns {Promise} Promise with list of operation policies

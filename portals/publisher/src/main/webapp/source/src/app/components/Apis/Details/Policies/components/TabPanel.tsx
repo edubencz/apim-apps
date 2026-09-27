@@ -20,6 +20,7 @@ import React, { FC } from 'react';
 import TabPanelShared from 'AppComponents/Shared/PoliciesUI/TabPanel';
 import DraggablePolicyCard from '../DraggablePolicyCard';
 import type { Policy } from '../Types';
+import type { DuplicateIntoEditorPrefill } from '../CreatePolicy';
 
 // Flow names moved outside component to avoid recreation on each render
 const FLOW_NAMES = ['request', 'response', 'fault'] as const;
@@ -34,6 +35,7 @@ interface TabPanelProps {
     fetchPolicies: () => void;
     isReadOnly?: boolean;
     hideViewButton?: boolean;
+    onDuplicateIntoEditor?: (prefill: DuplicateIntoEditorPrefill) => void;
 }
 
 /**
@@ -51,6 +53,7 @@ const TabPanel: FC<TabPanelProps> = ({
     fetchPolicies,
     isReadOnly = false,
     hideViewButton = false,
+    onDuplicateIntoEditor,
 }) => {
     const currentFlow = FLOW_NAMES[index] ?? 'request';
 
@@ -66,6 +69,7 @@ const TabPanel: FC<TabPanelProps> = ({
             DraggablePolicyCard={DraggablePolicyCard}
             isReadOnly={isReadOnly}
             hideViewButton={hideViewButton}
+            onDuplicateIntoEditor={onDuplicateIntoEditor}
         />
     );
 };

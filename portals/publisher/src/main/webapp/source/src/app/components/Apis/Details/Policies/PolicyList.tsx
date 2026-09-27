@@ -46,6 +46,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import type { Policy } from './Types';
 import TabPanel from './components/TabPanel';
 import CreatePolicy from './CreatePolicy';
+import type { DuplicateIntoEditorPrefill } from './CreatePolicy';
 
 const PREFIX = 'PolicyList';
 
@@ -113,6 +114,9 @@ const PolicyList: FC<PolicyListProps> = ({
 
     const [selectedTab, setSelectedTab] = useState(0); // Request flow related tab is active by default
     const [dialogOpen, setDialogOpen] = React.useState(false);
+    /** Issue 5: "Duplicate into editor" for an API-specific policy (ViewPolicy.tsx) reopens the
+     * "Add New Policy" dialog below prefilled, instead of always creating a COMMON policy. */
+    const [duplicatePrefill, setDuplicatePrefill] = useState<DuplicateIntoEditorPrefill | undefined>(undefined);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const isReadOnly = isRestricted([
@@ -164,6 +168,12 @@ const PolicyList: FC<PolicyListProps> = ({
 
     const handleAddPolicyClose = () => {
         setDialogOpen(false);
+        setDuplicatePrefill(undefined);
+    };
+
+    const handleDuplicateIntoEditor = (prefill: DuplicateIntoEditorPrefill) => {
+        setDuplicatePrefill(prefill);
+        setDialogOpen(true);
     };
 
     const handleCategoryChange = (event: SelectChangeEvent<string[]>) => {
@@ -219,6 +229,7 @@ const PolicyList: FC<PolicyListProps> = ({
             selectedTab={selectedTab}
             fetchPolicies={fetchPolicies}
             isReadOnly={isReadOnly}
+            onDuplicateIntoEditor={handleDuplicateIntoEditor}
         />
     );
 
@@ -444,6 +455,7 @@ const PolicyList: FC<PolicyListProps> = ({
                 dialogOpen={dialogOpen}
                 handleDialogClose={handleAddPolicyClose}
                 fetchPolicies={fetchPolicies}
+                duplicatePrefill={duplicatePrefill}
             />
         </StyledPaper>
     );

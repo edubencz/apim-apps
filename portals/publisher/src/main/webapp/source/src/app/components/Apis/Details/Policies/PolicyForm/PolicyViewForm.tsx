@@ -51,6 +51,8 @@ interface PolicyViewFormProps {
     onDone: () => void;
     isLocalToAPI: boolean;
     apiType?: string;
+    onDuplicateIntoEditor?: () => void;
+    duplicating?: boolean;
 }
 
 /**
@@ -58,7 +60,9 @@ interface PolicyViewFormProps {
  * @param {JSON} props Input props from parent components.
  * @returns {TSX} Right drawer for policy configuration.
  */
-const PolicyViewForm: FC<PolicyViewFormProps> = ({ policySpec, onDone, isLocalToAPI, apiType }) => {
+const PolicyViewForm: FC<PolicyViewFormProps> = ({
+    policySpec, onDone, isLocalToAPI, apiType, onDuplicateIntoEditor, duplicating,
+}) => {
 
 
     const getPolicyAttributes = () => {
@@ -99,6 +103,8 @@ const PolicyViewForm: FC<PolicyViewFormProps> = ({ policySpec, onDone, isLocalTo
                         isViewMode
                         policyId={policySpec.id}
                         isAPISpecific={policySpec.isAPISpecific}
+                        onDuplicateIntoEditor={onDuplicateIntoEditor}
+                        duplicating={duplicating}
                     />
                 </>
             )}

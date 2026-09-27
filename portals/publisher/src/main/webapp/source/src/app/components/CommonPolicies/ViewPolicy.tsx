@@ -29,6 +29,7 @@ import API from 'AppData/api';
 import { PolicySpec } from 'AppComponents/Apis/Details/Policies/Types';
 import { Progress } from 'AppComponents/Shared';
 import ResourceNotFoundError from 'AppComponents/Base/Errors/ResourceNotFoundError';
+import Alert from 'AppComponents/Shared/Alert';
 import PolicyViewForm from 'AppComponents/Apis/Details/Policies/PolicyForm/PolicyViewForm';
 
 const PREFIX = 'ViewPolicy';
@@ -63,6 +64,7 @@ const ViewPolicy: React.FC = () => {
     const [policySpec, setPolicySpec] = useState<PolicySpec | null>(null);
     const [notFound, setNotFound] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [duplicating, setDuplicating] = useState(false);
 
     useEffect(() => {
         setLoading(true);
@@ -88,6 +90,36 @@ const ViewPolicy: React.FC = () => {
 
     const redirectToPolicies = () => {
         history.push(CONSTS.PATH_TEMPLATES.COMMON_POLICIES);
+    };
+
+    /**
+     * "Duplicate into editor": fetches the raw .j2 definition and navigates to the common
+     * policy create page with the spec + definition pre-filled, opened straight into the
+     * "Write in editor" tab (see CommonPolicies/CreatePolicy.tsx `location.state.base`).
+     */
+    const handleDuplicateIntoEditor = () => {
+        if (!policySpec) return;
+        setDuplicating(true);
+        API.getCommonOperationPolicyDefinition(policySpec.id)
+            .then((response: any) => {
+                history.push(CONSTS.PATH_TEMPLATES.COMMON_POLICY_CREATE, {
+                    base: { spec: policySpec, definition: response.body },
+                });
+            })
+            .catch((error: any) => {
+                if (error?.message === 'OPERATION_NOT_AVAILABLE') {
+                    Alert.info(
+                        'Duplicating into the editor requires a newer Control Plane version '
+                        + '(the policy definition endpoint is not available yet)',
+                    );
+                } else {
+                    console.error(error);
+                    Alert.error('Something went wrong while fetching the policy definition');
+                }
+            })
+            .finally(() => {
+                setDuplicating(false);
+            });
     };
 
     const resourceNotFoundMessage = {
@@ -133,6 +165,8 @@ const ViewPolicy: React.FC = () => {
                                 policySpec={policySpec}
                                 onDone={redirectToPolicies}
                                 isLocalToAPI={false}
+                                onDuplicateIntoEditor={handleDuplicateIntoEditor}
+                                duplicating={duplicating}
                             />
                         </Paper>
                     </Grid>

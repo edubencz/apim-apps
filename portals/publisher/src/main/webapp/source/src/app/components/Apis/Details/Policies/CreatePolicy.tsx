@@ -34,6 +34,17 @@ import ApiContext from 'AppComponents/Apis/Details/components/ApiContext';
 import CONSTS from 'AppData/Constants';
 import type { CreatePolicySpec } from './Types';
 import PolicyCreateForm from './PolicyForm/PolicyCreateForm';
+import uuidv4 from './Utils';
+
+export interface DuplicateIntoEditorPrefill {
+    displayName?: string;
+    version?: string;
+    description?: string;
+    applicableFlows?: string[];
+    supportedApiTypes?: string[];
+    policyAttributes?: any[];
+    definition?: string;
+}
 
 const PREFIX = 'CreatePolicy';
 
@@ -54,6 +65,8 @@ interface CreatePolicyProps {
     handleDialogClose: () => void;
     dialogOpen: boolean;
     fetchPolicies: () => void;
+    /** Set by PolicyList.tsx when opened via "Duplicate into editor" from ViewPolicy.tsx */
+    duplicatePrefill?: DuplicateIntoEditorPrefill;
 }
 
 /**
@@ -65,12 +78,15 @@ const CreatePolicy: React.FC<CreatePolicyProps> = ({
     handleDialogClose,
     dialogOpen,
     fetchPolicies,
+    duplicatePrefill,
 }) => {
 
     const { api } = useContext<any>(ApiContext);
     const [saving, setSaving] = useState(false);
     const [synapsePolicyDefinitionFile, setSynapsePolicyDefinitionFile] = useState<any[]>([]);
     const [ccPolicyDefinitionFile, setCcPolicyDefinitionFile] = useState<any[]>([]);
+    const [sourceMode, setSourceMode] = useState<'upload' | 'editor'>('editor');
+    const [synapseEditorContent, setSynapseEditorContent] = useState<string>(duplicatePrefill?.definition || '');
 
     const savePolicy = (
         policySpecContent: CreatePolicySpec,
@@ -103,7 +119,11 @@ const CreatePolicy: React.FC<CreatePolicyProps> = ({
     };
 
     const onSave = (policySpecification: CreatePolicySpec) => {
-        const synapseFile = synapsePolicyDefinitionFile.length !== 0 ? synapsePolicyDefinitionFile : null;
+        let synapseFile = synapsePolicyDefinitionFile.length !== 0 ? synapsePolicyDefinitionFile : null;
+        if (sourceMode === 'editor') {
+            const fileName = `${policySpecification.name}_${policySpecification.version}.j2`;
+            synapseFile = [new File([synapseEditorContent], fileName, { type: 'text/plain' })];
+        }
         const ccFile = ccPolicyDefinitionFile.length !== 0 ? ccPolicyDefinitionFile : null;
         savePolicy(
             policySpecification,
@@ -167,6 +187,21 @@ const CreatePolicy: React.FC<CreatePolicyProps> = ({
                                 onCancel={handleDialogClose}
                                 saving={saving}
                                 apiType={api.type}
+                                sourceMode={sourceMode}
+                                setSourceMode={setSourceMode}
+                                synapseEditorContent={synapseEditorContent}
+                                setSynapseEditorContent={setSynapseEditorContent}
+                                prefill={duplicatePrefill ? {
+                                    displayName: duplicatePrefill.displayName
+                                        ? `${duplicatePrefill.displayName} Copy` : undefined,
+                                    version: duplicatePrefill.version,
+                                    description: duplicatePrefill.description,
+                                    applicableFlows: duplicatePrefill.applicableFlows,
+                                    supportedApiTypes: duplicatePrefill.supportedApiTypes,
+                                    policyAttributes: (duplicatePrefill.policyAttributes || []).map(
+                                        (attribute: any) => ({ ...attribute, id: uuidv4() }),
+                                    ),
+                                } : undefined}
                             />
                         </DialogContentText>
                     </Box>

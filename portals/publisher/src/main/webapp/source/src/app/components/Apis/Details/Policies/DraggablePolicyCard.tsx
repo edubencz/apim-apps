@@ -30,6 +30,7 @@ import IconButton from '@mui/material/IconButton';
 import { FormattedMessage } from 'react-intl';
 import { useDrag } from 'react-dnd';
 import type { Policy } from './Types';
+import type { DuplicateIntoEditorPrefill } from './CreatePolicy';
 import ViewPolicy from './ViewPolicy';
 import DeletePolicy from './DeletePolicy';
 
@@ -75,6 +76,8 @@ interface DraggablePolicyCardProps {
     fetchPolicies: () => void;
     isReadOnly?: boolean;
     hideViewButton?: boolean;
+    /** Forwarded to ViewPolicy - see PolicyList.tsx (Issue 5: "Duplicate into editor") */
+    onDuplicateIntoEditor?: (prefill: DuplicateIntoEditorPrefill) => void;
 }
 
 /**
@@ -89,6 +92,7 @@ const DraggablePolicyCard: React.FC<DraggablePolicyCardProps> = ({
     fetchPolicies,
     isReadOnly = false,
     hideViewButton = false,
+    onDuplicateIntoEditor,
 }) => {
     const [hovered, setHovered] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -212,6 +216,7 @@ const DraggablePolicyCard: React.FC<DraggablePolicyCardProps> = ({
                     handleDialogClose={handleViewPolicyClose}
                     policyObj={policyObj}
                     isLocalToAPI={isLocalToAPI}
+                    onDuplicateIntoEditor={onDuplicateIntoEditor}
                 />
             )}
         </Root>
