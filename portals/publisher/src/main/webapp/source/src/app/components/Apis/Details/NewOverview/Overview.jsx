@@ -23,6 +23,12 @@ import Typography from '@mui/material/Typography';
 import { FormattedMessage } from 'react-intl';
 import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
+import Box from '@mui/material/Box';
+import LanguageIcon from '@mui/icons-material/Language';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
+import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined';
 import API from 'AppData/api';
 import MCPServer from 'AppData/MCPServer';
 import ApiContext from 'AppComponents/Apis/Details/components/ApiContext';
@@ -37,6 +43,8 @@ import MetaData from './MetaData';
 import Endpoints from './Endpoints';
 import Topics from './Topics';
 import AssociatedAPI from './AssociatedAPI';
+import GatewayUrls from './GatewayUrls';
+import OverviewCard from './OverviewCard';
 
 const PREFIX = 'Overview';
 
@@ -113,6 +121,9 @@ const Root = styled('div')(({ theme }) => ({
 
     [`& .${classes.subtitle}`]: {
         marginTop: theme.spacing(0),
+        ...theme.typography.body2,
+        color: theme.palette.text.secondary,
+        fontWeight: 500,
     },
 
     [`& .${classes.specialGap}`]: {
@@ -130,10 +141,12 @@ const Root = styled('div')(({ theme }) => ({
 
     [`& .${classes.titleWrapper}`]: {
         display: 'flex',
+        justifyContent: 'flex-end',
     },
 
+    // Section titles are rendered by the OverviewCard header
     [`& .${classes.title}`]: {
-        flex: 1,
+        display: 'none',
     },
 
     [`& .${classes.helpButton}`]: {
@@ -183,7 +196,7 @@ const Root = styled('div')(({ theme }) => ({
     },
 
     [`& .${classes.stepperWrapper}`]: {
-        padding: theme.spacing(2),
+        padding: theme.spacing(3),
         boxSizing: 'border-box',
     }
 }));
@@ -252,6 +265,25 @@ function Overview(props) {
     if (newApi.apiType === API.CONSTS.APIProduct) {
         api.type = API.CONSTS.APIProduct;
     }
+    const showLifecycle = (api.apiType !== API.CONSTS.API || !api.advertiseInfo.advertised)
+        && api.gatewayType !== 'solace';
+    const showDeploymentInfo = showLifecycle;
+    const resourcesTitle = api.type === 'GraphQL' || api.type === 'GRAPHQL' ? (
+        <FormattedMessage id='Apis.Details.NewOverview.Operations.operations' defaultMessage='Operation' />
+    ) : (
+        <FormattedMessage id='Apis.Details.NewOverview.Resources.resources' defaultMessage='Resources' />
+    );
+    const endpointsTitle = api.type === MCPServer.CONSTS.MCP && api.isMCPServerFromExistingAPI() ? (
+        <FormattedMessage
+            id='Apis.Details.NewOverview.Overview.associated.api'
+            defaultMessage='Associated API'
+        />
+    ) : (
+        <FormattedMessage
+            id='Apis.Details.NewOverview.Overview.backend.endpoints'
+            defaultMessage='Backend Endpoints'
+        />
+    );
     return (
         (<Root>
             <Typography variant='h4' component='h2' align='left' className={classes.mainTitle}>
@@ -260,57 +292,76 @@ function Overview(props) {
                     defaultMessage='Overview'
                 />
             </Typography>
-            {(api.apiType !== API.CONSTS.API || !api.advertiseInfo.advertised) && api.gatewayType !== 'solace' && (
-                <Grid container>
-                    <Grid item xs={12}>
-                        <Paper className={classes.stepperWrapper}>
-                            <CustomizedStepper />
-                        </Paper>
+            <Box display='flex' flexDirection='column' gap={3} mt={2}>
+                {showLifecycle && (
+                    <Paper variant='outlined' sx={{ borderRadius: '12px' }} className={classes.stepperWrapper}>
+                        <CustomizedStepper />
+                    </Paper>
+                )}
+                {showDeploymentInfo && (
+                    <OverviewCard
+                        title={(
+                            <FormattedMessage
+                                id='Apis.Details.NewOverview.GatewayUrls.title'
+                                defaultMessage='Gateway URLs'
+                            />
+                        )}
+                        icon={<LanguageIcon />}
+                    >
+                        <GatewayUrls api={api} />
+                    </OverviewCard>
+                )}
+                <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                        <OverviewCard
+                            title={(
+                                <FormattedMessage
+                                    id='Apis.Details.NewOverview.Overview.details'
+                                    defaultMessage='Details'
+                                />
+                            )}
+                            icon={<InfoOutlinedIcon />}
+                        >
+                            <MetaData parentClasses={classes} />
+                        </OverviewCard>
                     </Grid>
-                </Grid>
-            )}
-            <div className={classes.contentWrapper}>
-                <Paper className={classes.root}>
-                    <Grid container spacing={4}>
-                        <Grid item xs={12} md={12} lg={12}>
-                            <Grid container spacing={4}>
-                                <Grid item xs={12} md={6} lg={6}>
-                                    <MetaData parentClasses={classes} />
-                                </Grid>
-                                <Grid item xs={12} md={6} lg={6}>
-                                    <Configuration parentClasses={classes} />
-                                </Grid>
+                    <Grid item xs={12} md={6}>
+                        <OverviewCard
+                            title={(
+                                <FormattedMessage
+                                    id='Apis.Details.NewOverview.MetaData.config'
+                                    defaultMessage='Configuration'
+                                />
+                            )}
+                            icon={<SettingsOutlinedIcon />}
+                        >
+                            <Configuration parentClasses={classes} />
+                        </OverviewCard>
+                    </Grid>
+                    {api.type === 'WEBSUB' ? (
+                        <Grid item xs={12}>
+                            <OverviewCard title={resourcesTitle} icon={<AccountTreeOutlinedIcon />}>
+                                {getResourcesClassForAPIs(api.type)}
+                            </OverviewCard>
+                        </Grid>
+                    ) : (
+                        <>
+                            <Grid item xs={12} md={6}>
+                                <OverviewCard title={resourcesTitle} icon={<AccountTreeOutlinedIcon />}>
+                                    {getResourcesClassForAPIs(api.type)}
+                                </OverviewCard>
                             </Grid>
-                        </Grid>
-                        <Grid item xs={12} md={12} lg={12}>
-                            <div className={classes.specialGap}>
-                                <Grid container spacing={4}>
-                                    {
-                                        api.type === 'WEBSUB' ? (
-                                            <Grid item xs={12} md={12} lg={12}>
-                                                <Grid item xs={12} md={12} lg={12}>
-                                                    {getResourcesClassForAPIs(api.type)}
-                                                </Grid>
-                                            </Grid>
-                                        ) : (
-                                            <>
-                                                <Grid item xs={12} md={6} lg={6}>
-                                                    <Grid item xs={12} md={8} lg={8}>
-                                                        {getResourcesClassForAPIs(api.type)}
-                                                    </Grid>
-                                                </Grid>
-                                                <Grid item xs={12} md={6} lg={6}>
-                                                    {loadEndpoints}
-                                                </Grid>
-                                            </>
-                                        )
-                                    }
+                            {loadEndpoints && (
+                                <Grid item xs={12} md={6}>
+                                    <OverviewCard title={endpointsTitle} icon={<StorageOutlinedIcon />}>
+                                        {loadEndpoints}
+                                    </OverviewCard>
                                 </Grid>
-                            </div>
-                        </Grid>
-                    </Grid>
-                </Paper>
-            </div>
+                            )}
+                        </>
+                    )}
+                </Grid>
+            </Box>
         </Root>)
     );
 }

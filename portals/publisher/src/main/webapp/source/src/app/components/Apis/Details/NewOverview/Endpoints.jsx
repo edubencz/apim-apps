@@ -261,7 +261,7 @@ function Endpoints(props) {
                 <Typography variant='h5' component='h2' className={parentClasses.title} data-testid='endpoints'>
                     <FormattedMessage
                         id='Apis.Details.NewOverview.Endpoints.endpoints'
-                        defaultMessage='Endpoints'
+                        defaultMessage='Backend Endpoints'
                     />
                 </Typography>
             </div>
